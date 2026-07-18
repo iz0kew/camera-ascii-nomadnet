@@ -9,6 +9,7 @@ luminosita'/contrasto, inversione) piu' due aggiunte:
 """
 from __future__ import annotations
 
+import html
 import io
 from typing import List, Tuple
 
@@ -65,13 +66,17 @@ def _render_mono(luminance: np.ndarray, ramp: str) -> str:
     return "\n".join(lines)
 
 
-def _render_color(luminance: np.ndarray, rgb_arr: np.ndarray, ramp: str) -> str:
-    """Genera righe con tag colore Micron `FxxxTesto`f, raggruppando i run di
-    pixel dello stesso colore cosi' da non moltiplicare i byte per carattere."""
+def _color_runs_per_row(
+    luminance: np.ndarray, rgb_arr: np.ndarray, ramp: str
+) -> List[List[Tuple[str, str]]]:
+    """Per ogni riga, calcola i run consecutivi di pixel con lo stesso colore
+    quantizzato (colore Micron a 3 cifre hex, es. "f30") come lista di
+    coppie (colore, testo). Un solo posto dove si decide come raggruppare i
+    pixel, riusato sia dal renderer Micron sia da quello HTML per l'anteprima."""
     height, width = luminance.shape
-    lines: List[str] = []
+    rows: List[List[Tuple[str, str]]] = []
     for y in range(height):
-        parts: List[str] = []
+        runs: List[Tuple[str, str]] = []
         current_color = None
         run_chars: List[str] = []
         for x in range(width):
@@ -79,18 +84,48 @@ def _render_color(luminance: np.ndarray, rgb_arr: np.ndarray, ramp: str) -> str:
             color = _rgb_to_micron_hex(tuple(rgb_arr[y, x]))
             if color != current_color:
                 if run_chars:
-                    parts.append(f"`F{current_color}" + "".join(run_chars) + "`f")
+                    runs.append((current_color, "".join(run_chars)))
                 run_chars = []
                 current_color = color
             run_chars.append(char)
         if run_chars:
-            parts.append(f"`F{current_color}" + "".join(run_chars) + "`f")
+            runs.append((current_color, "".join(run_chars)))
+        rows.append(runs)
+    return rows
+
+
+def _render_color_micron(rows: List[List[Tuple[str, str]]]) -> str:
+    """Renderizza i run colore come tag Micron `FxxxTesto`f, per la pagina
+    NomadNet reale."""
+    lines = ["".join(f"`F{color}{text}`f" for color, text in row) for row in rows]
+    return "\n".join(lines)
+
+
+def _micron_hex_to_css(hexcode: str) -> str:
+    return "#" + "".join(ch * 2 for ch in hexcode)
+
+
+def _render_color_html(rows: List[List[Tuple[str, str]]]) -> str:
+    """Renderizza i run colore come <span> HTML, per l'anteprima nel browser
+    della Web UI (che non sa interpretare la sintassi Micron)."""
+    lines = []
+    for row in rows:
+        parts = [
+            f'<span style="color:{_micron_hex_to_css(color)}">{html.escape(text)}</span>'
+            for color, text in row
+        ]
         lines.append("".join(parts))
     return "\n".join(lines)
 
 
-def image_to_ascii(jpeg_bytes: bytes, cfg: AsciiConfig) -> str:
-    """Converte i byte di un'immagine (JPEG/PNG) in una stringa ASCII art."""
+def image_to_ascii(jpeg_bytes: bytes, cfg: AsciiConfig, target: str = "micron") -> str:
+    """Converte i byte di un'immagine (JPEG/PNG) in una stringa ASCII art.
+
+    "target" sceglie il formato di output della modalita' colore:
+    - "micron" (default): tag colore Micron, per la pagina NomadNet reale.
+    - "html": <span> con colore CSS, per l'anteprima nel browser della Web UI.
+    In modalita' mono "target" non ha effetto: e' sempre testo semplice.
+    """
     image = _load_image(jpeg_bytes)
     image = _resize_for_ascii(image, cfg.width, cfg.char_aspect_ratio)
     image = _apply_enhancements(image, cfg)
@@ -102,5 +137,8 @@ def image_to_ascii(jpeg_bytes: bytes, cfg: AsciiConfig) -> str:
 
     if cfg.color_mode == "color":
         rgb_arr = np.asarray(image, dtype=np.uint8)
-        return _render_color(luminance, rgb_arr, ramp)
+        rows = _color_runs_per_row(luminance, rgb_arr, ramp)
+        if target == "html":
+            return _render_color_html(rows)
+        return _render_color_micron(rows)
     return _render_mono(luminance, ramp)

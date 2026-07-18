@@ -93,11 +93,14 @@ def preview():
         return jsonify({"error": "Carica un'immagine oppure usa \"Cattura dalla camera\"."}), 400
 
     try:
-        ascii_art = image_to_ascii(jpeg_bytes, ascii_cfg)
+        # target="html": nel browser i tag colore Micron (`Fxxx...`f) non
+        # verrebbero interpretati e comparirebbero come testo grezzo mischiato
+        # all'ascii art; per l'anteprima serve un rendering HTML equivalente.
+        ascii_art = image_to_ascii(jpeg_bytes, ascii_cfg, target="html")
     except Exception as exc:  # immagine non valida, parametri incoerenti, ecc.
         return jsonify({"error": f"Conversione fallita: {exc}"}), 400
 
-    return jsonify({"ascii": ascii_art})
+    return jsonify({"ascii": ascii_art, "is_html": ascii_cfg.color_mode == "color"})
 
 
 if __name__ == "__main__":

@@ -1,13 +1,13 @@
 {
-  "width": 100,
-  "char_aspect_ratio": 2.0,
+  "width": 200,
+  "char_aspect_ratio": 1.4,
   "ramp_preset": "standard",
   "custom_ramp": "",
-  "brightness": 1.0,
-  "contrast": 1.0,
+  "brightness": 1.95,
+  "contrast": 1.45,
   "gamma": 1.0,
   "invert": false,
-  "edge_detect": false,
+  "edge_detect": true,
   "edge_mix": 0.5,
   "color_mode": "mono"
 }

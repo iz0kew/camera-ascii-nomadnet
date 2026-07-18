@@ -194,7 +194,13 @@ async function runPreview(extra) {
       previewEl.textContent = '';
       return;
     }
-    previewEl.textContent = json.ascii;
+    // In modalita' colore il backend restituisce <span> HTML gia' pronti
+    // (i tag colore Micron non avrebbero senso mostrati come testo grezzo).
+    if (json.is_html) {
+      previewEl.innerHTML = json.ascii;
+    } else {
+      previewEl.textContent = json.ascii;
+    }
     showStatus('Anteprima generata.', false);
   } catch (err) {
     showStatus('Errore di rete durante l\'anteprima: ' + err, true);
