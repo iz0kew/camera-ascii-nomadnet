@@ -1,0 +1,25 @@
+# Segreti e configurazione locale
+.env
+
+# Cache generata a runtime (screenshot/ascii/metadati)
+cache/*.txt
+cache/*.json
+cache/*.jpg
+cache/*.tmp
+!cache/.gitkeep
+
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
+*.egg-info/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Impostazioni locali di Claude Code (specifiche della macchina)
+.claude/

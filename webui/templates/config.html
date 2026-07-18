@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>Configurazione Camera ASCII per NomadNet</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font-family: system-ui, sans-serif; margin: 0; padding: 1.5rem; background: #f4f4f4; color: #222; }
+  @media (prefers-color-scheme: dark) { body { background: #1b1b1b; color: #e8e8e8; } }
+  h1 { font-size: 1.3rem; margin-bottom: 0.25rem; }
+  .subtitle { color: #666; margin-top: 0; margin-bottom: 1.25rem; font-size: 0.9rem; }
+  .layout { display: grid; grid-template-columns: minmax(280px, 380px) 1fr; gap: 1.5rem; align-items: start; }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+  fieldset { border: 1px solid #ccc; border-radius: 8px; margin-bottom: 1rem; padding: 0.75rem 1rem 1rem; background: rgba(255,255,255,0.6); }
+  @media (prefers-color-scheme: dark) { fieldset { border-color: #444; background: rgba(255,255,255,0.03); } }
+  legend { font-weight: 600; padding: 0 0.4rem; }
+  label { display: block; font-size: 0.85rem; margin-top: 0.6rem; margin-bottom: 0.2rem; }
+  input[type=text], input[type=password], input[type=number], select {
+    width: 100%; box-sizing: border-box; padding: 0.4rem; border-radius: 5px; border: 1px solid #bbb; font-size: 0.9rem;
+  }
+  input[type=range] { width: 100%; }
+  .row { display: flex; gap: 0.75rem; }
+  .row > div { flex: 1; }
+  .checkbox-row { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.6rem; }
+  .checkbox-row label { margin: 0; }
+  button { cursor: pointer; border: none; border-radius: 6px; padding: 0.55rem 1rem; font-size: 0.9rem; font-weight: 600; }
+  .btn-primary { background: #2563eb; color: white; }
+  .btn-secondary { background: #444; color: white; }
+  .actions { display: flex; gap: 0.6rem; margin-top: 0.5rem; flex-wrap: wrap; }
+  .preview-box { background: #0d0d0d; color: #d7ffd7; border-radius: 8px; padding: 1rem; min-height: 400px; overflow: auto; }
+  pre { margin: 0; font-family: "Consolas", "Courier New", monospace; font-size: 0.55rem; line-height: 0.62rem; white-space: pre; }
+  .status { padding: 0.5rem 0.8rem; border-radius: 6px; margin-bottom: 1rem; font-size: 0.85rem; }
+  .status.ok { background: #163; color: #cfc; }
+  .status.err { background: #611; color: #fcc; }
+  .hint { color: #888; font-size: 0.78rem; margin-top: 0.2rem; }
+</style>
+</head>
+<body>
+<h1>Camera ONVIF &rarr; ASCII Art per NomadNet</h1>
+<p class="subtitle">Imposta i parametri di camera e conversione, con anteprima live come su asciiart.eu. Il salvataggio scrive su <code>.env</code> e <code>config/ascii_config.json</code>.</p>
+
+{% if saved %}<div class="status ok">Parametri salvati.</div>{% endif %}
+
+<form id="config-form">
+<div class="layout">
+  <div>
+    <fieldset>
+      <legend>Telecamera ONVIF</legend>
+      <label for="ip">Indirizzo IP</label>
+      <input type="text" id="ip" name="ip" value="{{ camera.ip }}" placeholder="192.168.1.100">
+
+      <div class="row">
+        <div>
+          <label for="port">Porta</label>
+          <input type="number" id="port" name="port" value="{{ camera.port }}">
+        </div>
+        <div>
+          <label for="capture_method">Metodo cattura</label>
+          <select id="capture_method" name="capture_method">
+            <option value="onvif" {% if camera.capture_method == "onvif" %}selected{% endif %}>ONVIF snapshot (consigliato)</option>
+            <option value="rtsp" {% if camera.capture_method == "rtsp" %}selected{% endif %}>RTSP (fallback via OpenCV)</option>
+          </select>
+        </div>
+      </div>
+
+      <label for="user">Utente</label>
+      <input type="text" id="user" name="user" value="{{ camera.user }}">
+
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" value="{{ camera.password }}">
+
+      <label for="wsdl_dir">Cartella WSDL custom (opzionale)</label>
+      <input type="text" id="wsdl_dir" name="wsdl_dir" value="{{ camera.wsdl_dir }}">
+
+      <label for="snapshot_interval_seconds">Intervallo cattura (secondi)</label>
+      <input type="number" id="snapshot_interval_seconds" name="snapshot_interval_seconds" value="{{ camera.snapshot_interval_seconds }}" min="5">
+
+      <label for="cache_dir">Cartella cache</label>
+      <input type="text" id="cache_dir" name="cache_dir" value="{{ camera.cache_dir }}">
+    </fieldset>
+
+    <fieldset>
+      <legend>Conversione ASCII</legend>
+      <label for="width">Larghezza (colonne di caratteri)</label>
+      <input type="number" id="width" name="width" value="{{ ascii_cfg.width }}" min="10" max="400">
+
+      <label for="ramp_preset">Rampa di caratteri</label>
+      <select id="ramp_preset" name="ramp_preset">
+        <option value="standard" {% if ascii_cfg.ramp_preset == "standard" %}selected{% endif %}>Standard (10 livelli)</option>
+        <option value="detailed" {% if ascii_cfg.ramp_preset == "detailed" %}selected{% endif %}>Dettagliata (70 livelli)</option>
+        <option value="blocks" {% if ascii_cfg.ramp_preset == "blocks" %}selected{% endif %}>Blocchi Unicode</option>
+      </select>
+
+      <label for="custom_ramp">Rampa personalizzata (opzionale, dal piu' scuro al piu' chiaro)</label>
+      <input type="text" id="custom_ramp" name="custom_ramp" value="{{ ascii_cfg.custom_ramp }}" placeholder="es. @%#*+=-:. ">
+
+      <div class="row">
+        <div>
+          <label for="brightness">Luminosita' ({{ ascii_cfg.brightness }})</label>
+          <input type="range" id="brightness" name="brightness" min="0.2" max="2.5" step="0.05" value="{{ ascii_cfg.brightness }}">
+        </div>
+        <div>
+          <label for="contrast">Contrasto ({{ ascii_cfg.contrast }})</label>
+          <input type="range" id="contrast" name="contrast" min="0.2" max="2.5" step="0.05" value="{{ ascii_cfg.contrast }}">
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="gamma">Gamma ({{ ascii_cfg.gamma }})</label>
+          <input type="range" id="gamma" name="gamma" min="0.2" max="2.5" step="0.05" value="{{ ascii_cfg.gamma }}">
+        </div>
+        <div>
+          <label for="char_aspect_ratio">Rapporto carattere ({{ ascii_cfg.char_aspect_ratio }})</label>
+          <input type="range" id="char_aspect_ratio" name="char_aspect_ratio" min="1.0" max="3.0" step="0.1" value="{{ ascii_cfg.char_aspect_ratio }}">
+        </div>
+      </div>
+
+      <div class="checkbox-row">
+        <input type="checkbox" id="invert" name="invert" {% if ascii_cfg.invert %}checked{% endif %}>
+        <label for="invert">Inverti rampa</label>
+      </div>
+
+      <div class="checkbox-row">
+        <input type="checkbox" id="edge_detect" name="edge_detect" {% if ascii_cfg.edge_detect %}checked{% endif %}>
+        <label for="edge_detect">Edge detection (contorni piu' leggibili)</label>
+      </div>
+
+      <label for="edge_mix">Intensita' edge detection ({{ ascii_cfg.edge_mix }})</label>
+      <input type="range" id="edge_mix" name="edge_mix" min="0" max="1" step="0.05" value="{{ ascii_cfg.edge_mix }}">
+
+      <label for="color_mode">Modalita' colore</label>
+      <select id="color_mode" name="color_mode">
+        <option value="mono" {% if ascii_cfg.color_mode == "mono" %}selected{% endif %}>Monocromatico (consigliato su LoRa / bassa banda)</option>
+        <option value="color" {% if ascii_cfg.color_mode == "color" %}selected{% endif %}>A colori (pagina piu' pesante, ok su TCP)</option>
+      </select>
+      <p class="hint">Su interfacce lente (es. LoRa) usa monocromatico: ogni carattere colorato aggiunge byte di markup Micron alla pagina.</p>
+    </fieldset>
+
+    <div class="actions">
+      <button type="button" class="btn-primary" id="btn-save">Salva parametri</button>
+      <button type="button" class="btn-secondary" id="btn-preview-camera">Cattura ora dalla camera</button>
+    </div>
+
+    <fieldset style="margin-top:1rem;">
+      <legend>Anteprima da immagine locale</legend>
+      <input type="file" id="image-file" name="image" accept="image/*">
+      <div class="actions">
+        <button type="button" class="btn-secondary" id="btn-preview-file">Genera anteprima da file</button>
+      </div>
+    </fieldset>
+
+    <div id="status"></div>
+  </div>
+
+  <div>
+    <div class="preview-box"><pre id="preview">L'anteprima ASCII apparira' qui.</pre></div>
+  </div>
+</div>
+</form>
+
+<script>
+const form = document.getElementById('config-form');
+const statusEl = document.getElementById('status');
+const previewEl = document.getElementById('preview');
+
+function showStatus(message, isError) {
+  statusEl.innerHTML = `<div class="status ${isError ? 'err' : 'ok'}">${message}</div>`;
+}
+
+document.getElementById('btn-save').addEventListener('click', async () => {
+  const data = new FormData(form);
+  const resp = await fetch('/save', { method: 'POST', body: data });
+  if (resp.redirected || resp.ok) {
+    showStatus('Parametri salvati.', false);
+  } else {
+    showStatus('Errore durante il salvataggio.', true);
+  }
+});
+
+async function runPreview(extra) {
+  const data = new FormData(form);
+  if (extra) {
+    for (const [key, value] of Object.entries(extra)) {
+      data.set(key, value);
+    }
+  }
+  previewEl.textContent = 'Generazione anteprima...';
+  try {
+    const resp = await fetch('/preview', { method: 'POST', body: data });
+    const json = await resp.json();
+    if (!resp.ok) {
+      showStatus(json.error || 'Errore sconosciuto', true);
+      previewEl.textContent = '';
+      return;
+    }
+    previewEl.textContent = json.ascii;
+    showStatus('Anteprima generata.', false);
+  } catch (err) {
+    showStatus('Errore di rete durante l\'anteprima: ' + err, true);
+  }
+}
+
+document.getElementById('btn-preview-camera').addEventListener('click', () => {
+  runPreview({ source: 'camera' });
+});
+
+document.getElementById('btn-preview-file').addEventListener('click', () => {
+  const fileInput = document.getElementById('image-file');
+  if (!fileInput.files.length) {
+    showStatus('Seleziona prima un file immagine.', true);
+    return;
+  }
+  // image-file e' dentro il <form>, quindi new FormData(form) in runPreview()
+  // lo include gia' automaticamente: basta forzare source=file.
+  runPreview({ source: 'file' });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+onvif-zeep>=0.2.12
+zeep>=4.2.1
+python-dotenv>=1.0.1
+Pillow>=10.3.0
+numpy>=1.26.4
+requests>=2.31.0
+opencv-python>=4.9.0.80
+Flask>=3.0.3
