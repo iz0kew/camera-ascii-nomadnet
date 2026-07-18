@@ -61,6 +61,56 @@ def _rgb_to_micron_hex(rgb: Tuple[int, int, int]) -> str:
     return f"{r:x}{g:x}{b:x}"
 
 
+# Palette terminale ANSI standard (xterm), usata per le modalita' colore
+# "8" e "16": accorpa i pixel simili su un numero fisso di colori, cosi' i
+# run consecutivi diventano piu' lunghi (pagina Micron piu' leggera) e il
+# risultato ricorda l'estetica di un terminale a 8/16 colori.
+_ANSI_PALETTE_8 = np.array(
+    [
+        (0, 0, 0),
+        (128, 0, 0),
+        (0, 128, 0),
+        (128, 128, 0),
+        (0, 0, 128),
+        (128, 0, 128),
+        (0, 128, 128),
+        (192, 192, 192),
+    ],
+    dtype=np.int16,
+)
+
+_ANSI_PALETTE_16 = np.concatenate(
+    [
+        _ANSI_PALETTE_8,
+        np.array(
+            [
+                (128, 128, 128),
+                (255, 0, 0),
+                (0, 255, 0),
+                (255, 255, 0),
+                (0, 0, 255),
+                (255, 0, 255),
+                (0, 255, 255),
+                (255, 255, 255),
+            ],
+            dtype=np.int16,
+        ),
+    ]
+)
+
+_ANSI_PALETTES = {"8": _ANSI_PALETTE_8, "16": _ANSI_PALETTE_16}
+
+
+def _quantize_to_palette(rgb_arr: np.ndarray, palette: np.ndarray) -> np.ndarray:
+    """Rimpiazza ogni pixel con il colore piu' vicino (distanza euclidea) della
+    palette data."""
+    pixels = rgb_arr.astype(np.int32)
+    diffs = pixels[:, :, None, :] - palette[None, None, :, :].astype(np.int32)
+    distances = np.sum(diffs ** 2, axis=-1)
+    nearest_idx = np.argmin(distances, axis=-1)
+    return palette[nearest_idx].astype(np.uint8)
+
+
 def _render_mono(luminance: np.ndarray, ramp: str) -> str:
     lines = ["".join(_char_for_value(v, ramp) for v in row) for row in luminance]
     return "\n".join(lines)
@@ -125,6 +175,10 @@ def image_to_ascii(jpeg_bytes: bytes, cfg: AsciiConfig, target: str = "micron") 
     - "micron" (default): tag colore Micron, per la pagina NomadNet reale.
     - "html": <span> con colore CSS, per l'anteprima nel browser della Web UI.
     In modalita' mono "target" non ha effetto: e' sempre testo semplice.
+
+    "cfg.color_palette" sceglie la ricchezza di colore quando color_mode e'
+    "color": "full" (fino a 4096 sfumature, 16 livelli per canale), "16" o
+    "8" (palette terminale ANSI, pagina piu' leggera e look piu' "retro").
     """
     image = _load_image(jpeg_bytes)
     image = _resize_for_ascii(image, cfg.width, cfg.char_aspect_ratio)
@@ -137,6 +191,9 @@ def image_to_ascii(jpeg_bytes: bytes, cfg: AsciiConfig, target: str = "micron") 
 
     if cfg.color_mode == "color":
         rgb_arr = np.asarray(image, dtype=np.uint8)
+        palette = _ANSI_PALETTES.get(cfg.color_palette)
+        if palette is not None:
+            rgb_arr = _quantize_to_palette(rgb_arr, palette)
         rows = _color_runs_per_row(luminance, rgb_arr, ramp)
         if target == "html":
             return _render_color_html(rows)

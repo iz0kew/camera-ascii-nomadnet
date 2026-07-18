@@ -51,6 +51,7 @@ class AsciiConfig:
     edge_detect: bool = False
     edge_mix: float = 0.5
     color_mode: str = "mono"  # mono | color
+    color_palette: str = "full"  # full (4096 sfumature) | 16 | 8 (palette ANSI)
 
     def ramp(self) -> str:
         return self.custom_ramp if self.custom_ramp else RAMP_PRESETS.get(

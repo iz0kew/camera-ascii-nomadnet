@@ -42,6 +42,7 @@ def _ascii_config_from_form(form) -> AsciiConfig:
         edge_detect=form.get("edge_detect") in ("on", "true", "1"),
         edge_mix=float(form.get("edge_mix") or 0.5),
         color_mode=form.get("color_mode", "mono"),
+        color_palette=form.get("color_palette", "full"),
     )
 
 

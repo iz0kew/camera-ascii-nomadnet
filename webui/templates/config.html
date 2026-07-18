@@ -135,6 +135,14 @@
         <option value="color" {% if ascii_cfg.color_mode == "color" %}selected{% endif %}>A colori (pagina piu' pesante, ok su TCP)</option>
       </select>
       <p class="hint">Su interfacce lente (es. LoRa) usa monocromatico: ogni carattere colorato aggiunge byte di markup Micron alla pagina.</p>
+
+      <label for="color_palette">Palette colore (se "a colori")</label>
+      <select id="color_palette" name="color_palette">
+        <option value="full" {% if ascii_cfg.color_palette == "full" %}selected{% endif %}>Completa (~4096 sfumature)</option>
+        <option value="16" {% if ascii_cfg.color_palette == "16" %}selected{% endif %}>16 colori (palette ANSI)</option>
+        <option value="8" {% if ascii_cfg.color_palette == "8" %}selected{% endif %}>8 colori (palette ANSI)</option>
+      </select>
+      <p class="hint">Con 8/16 colori i pixel simili vengono accorpati sulla stessa tonalita': pagina piu' leggera e look "terminale retro".</p>
     </fieldset>
 
     <div class="actions">

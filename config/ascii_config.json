@@ -1,5 +1,5 @@
 {
-  "width": 200,
+  "width": 120,
   "char_aspect_ratio": 1.4,
   "ramp_preset": "standard",
   "custom_ramp": "",
@@ -9,5 +9,6 @@
   "invert": false,
   "edge_detect": true,
   "edge_mix": 0.5,
-  "color_mode": "mono"
+  "color_mode": "mono",
+  "color_palette": "full"
 }
