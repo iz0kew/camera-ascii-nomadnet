@@ -4,6 +4,10 @@ Pagina dinamica per un nodo [NomadNet](https://github.com/markqvist/NomadNet) (r
 [Reticulum](https://reticulum.network/)) che mostra l'ultimo screenshot di una
 telecamera di rete ONVIF, convertito in ASCII art e renderizzato in Micron.
 
+> Per installare e far girare questo progetto su un nodo Reticulum/NomadNet
+> reale (file da copiare/escludere, pacchetti di sistema, servizi systemd,
+> gestione della cache) vedi la **[guida al deploy](DEPLOY.md)**.
+
 ## Come funziona
 
 Il progetto è diviso in tre parti indipendenti:
