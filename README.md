@@ -46,6 +46,12 @@ cp .env.example .env               # poi modifica .env con i tuoi dati
 se la tua camera funziona bene con il semplice snapshot ONVIF puoi rimuoverla
 da `requirements.txt` e da `src/onvif_camera.py` (funzione `_capture_rtsp_frame`).
 
+> **Nota**: la cartella `vendor/wsdl/` contiene una copia dei file WSDL ONVIF
+> necessari a `onvif-zeep`. È vendorizzata volutamente nel repository perché
+> il pacchetto pubblicato su PyPI non li installa correttamente di default
+> (percorso rotto): senza questa copia ogni chiamata ONVIF fallisce subito
+> con un `TypeError` prima ancora di contattare la camera.
+
 ## Configurazione
 
 Compila `.env` (vedi `.env.example`):

@@ -13,6 +13,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 ENV_PATH = BASE_DIR / ".env"
 ASCII_CONFIG_PATH = BASE_DIR / "config" / "ascii_config.json"
 
+# Il pacchetto onvif-zeep punta di default a un percorso WSDL che spesso non
+# viene installato correttamente dal wheel su PyPI. Vendorizziamo qui una
+# copia nota funzionante (da github.com/FalkTannhaeuser/python-onvif-zeep)
+# cosi' il progetto funziona subito senza configurazione aggiuntiva.
+VENDORED_WSDL_DIR = BASE_DIR / "vendor" / "wsdl"
+
 RAMP_PRESETS = {
     "standard": " .:-=+*#%@",
     "detailed": "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'. ",
@@ -66,7 +72,7 @@ def load_settings() -> Settings:
         port=int(os.getenv("CAMERA_PORT", "80") or 80),
         user=os.getenv("CAMERA_USER", ""),
         password=os.getenv("CAMERA_PASSWORD", ""),
-        wsdl_dir=os.getenv("CAMERA_WSDL_DIR", ""),
+        wsdl_dir=os.getenv("CAMERA_WSDL_DIR") or str(VENDORED_WSDL_DIR),
         capture_method=os.getenv("CAPTURE_METHOD", "onvif"),
         snapshot_interval_seconds=int(os.getenv("SNAPSHOT_INTERVAL_SECONDS", "60") or 60),
         cache_dir=os.getenv("CACHE_DIR", "cache"),
