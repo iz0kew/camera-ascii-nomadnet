@@ -129,22 +129,13 @@ lo script.
 immagine locale") per testare tutti i parametri di conversione ASCII senza
 bisogno di una camera ONVIF collegata.
 
-## Preparazione repository GitHub
+## Repository GitHub
 
-Questo repository è già inizializzato in locale con un primo commit. Per
-pubblicarlo su GitHub (repository **privato** consigliato, dato che contiene
+Il progetto è pubblicato (repository **privato**, dato che contiene
 riferimenti a una telecamera reale anche se le credenziali restano solo in
-`.env`, mai versionato):
+`.env`, mai versionato) su:
 
-1. Crea un repository vuoto su github.com (senza README/licenza, per evitare
-   conflitti con quelli già presenti qui).
-2. Collega il remote e pusha:
-
-   ```bash
-   git remote add origin https://github.com/<tuo-utente>/<nome-repo>.git
-   git branch -M main
-   git push -u origin main
-   ```
+https://github.com/iz0kew/camera-ascii-nomadnet
 
 ## Licenza
 
