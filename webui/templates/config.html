@@ -80,6 +80,26 @@
     </fieldset>
 
     <fieldset>
+      <legend>Storico screenshot</legend>
+      <div class="checkbox-row">
+        <input type="checkbox" id="save_history" name="save_history" {% if camera.save_history %}checked{% endif %}>
+        <label for="save_history">Salva ogni scatto anche in cache/history/ (oltre all'ultimo)</label>
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="history_retention_hours">Conserva per (ore, 0 = illimitato)</label>
+          <input type="number" id="history_retention_hours" name="history_retention_hours" value="{{ camera.history_retention_hours }}" min="0">
+        </div>
+        <div>
+          <label for="history_max_files">Numero massimo di file (0 = illimitato)</label>
+          <input type="number" id="history_max_files" name="history_max_files" value="{{ camera.history_max_files }}" min="0">
+        </div>
+      </div>
+      <p class="hint">La pulizia e' automatica ad ogni ciclo dello scheduler: non serve un cron esterno.</p>
+    </fieldset>
+
+    <fieldset>
       <legend>Conversione ASCII</legend>
       <label for="width">Larghezza (colonne di caratteri)</label>
       <input type="number" id="width" name="width" value="{{ ascii_cfg.width }}" min="10" max="400">

@@ -36,6 +36,9 @@ class CameraConfig:
     capture_method: str = "onvif"  # onvif | rtsp
     snapshot_interval_seconds: int = 60
     cache_dir: str = "cache"
+    save_history: bool = False
+    history_retention_hours: int = 168  # 7 giorni
+    history_max_files: int = 500  # tetto di sicurezza indipendente dall'eta'
 
 
 @dataclass
@@ -77,6 +80,9 @@ def load_settings() -> Settings:
         capture_method=os.getenv("CAPTURE_METHOD", "onvif"),
         snapshot_interval_seconds=int(os.getenv("SNAPSHOT_INTERVAL_SECONDS", "60") or 60),
         cache_dir=os.getenv("CACHE_DIR", "cache"),
+        save_history=os.getenv("SAVE_HISTORY", "false").strip().lower() in ("1", "true", "yes", "on"),
+        history_retention_hours=int(os.getenv("HISTORY_RETENTION_HOURS", "168") or 168),
+        history_max_files=int(os.getenv("HISTORY_MAX_FILES", "500") or 500),
     )
 
     ascii_cfg = AsciiConfig()
@@ -100,6 +106,9 @@ def save_camera_config(camera: CameraConfig) -> None:
     set_key(str(ENV_PATH), "CAPTURE_METHOD", camera.capture_method)
     set_key(str(ENV_PATH), "SNAPSHOT_INTERVAL_SECONDS", str(camera.snapshot_interval_seconds))
     set_key(str(ENV_PATH), "CACHE_DIR", camera.cache_dir)
+    set_key(str(ENV_PATH), "SAVE_HISTORY", "true" if camera.save_history else "false")
+    set_key(str(ENV_PATH), "HISTORY_RETENTION_HOURS", str(camera.history_retention_hours))
+    set_key(str(ENV_PATH), "HISTORY_MAX_FILES", str(camera.history_max_files))
 
 
 def save_ascii_config(ascii_cfg: AsciiConfig) -> None:
@@ -107,9 +116,20 @@ def save_ascii_config(ascii_cfg: AsciiConfig) -> None:
     ASCII_CONFIG_PATH.write_text(json.dumps(asdict(ascii_cfg), indent=2), encoding="utf-8")
 
 
-def cache_paths(camera: CameraConfig) -> Tuple[Path, Path]:
+def _resolved_cache_dir(camera: CameraConfig) -> Path:
     cache_dir = Path(camera.cache_dir)
     if not cache_dir.is_absolute():
         cache_dir = BASE_DIR / cache_dir
+    return cache_dir
+
+
+def cache_paths(camera: CameraConfig) -> Tuple[Path, Path]:
+    cache_dir = _resolved_cache_dir(camera)
     cache_dir.mkdir(parents=True, exist_ok=True)
     return cache_dir / "latest.txt", cache_dir / "latest_meta.json"
+
+
+def history_dir_path(camera: CameraConfig) -> Path:
+    history_dir = _resolved_cache_dir(camera) / "history"
+    history_dir.mkdir(parents=True, exist_ok=True)
+    return history_dir

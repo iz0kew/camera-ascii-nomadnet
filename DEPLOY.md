@@ -161,52 +161,40 @@ Per una prova rapida senza systemd va bene anche una sessione `screen`/`tmux`
 con `python -m src.scheduler` dentro, ma non sopravvive a un riavvio della
 macchina.
 
-## 8. Rimuovere le vecchie foto / pulizia automatica
+## 8. Storico screenshot e pulizia automatica
 
-**Con l'impostazione attuale del progetto non serve nessuna pulizia**: lo
-scheduler non accumula screenshot. Ad ogni ciclo scrive sempre sugli stessi
-due file, sovrascrivendoli in modo atomico (`os.replace`):
+Per impostazione predefinita (`SAVE_HISTORY=false`) lo scheduler **non
+accumula nulla**: ad ogni ciclo sovrascrive sempre gli stessi due file
+(`cache/latest.txt` e `cache/latest_meta.json`), quindi lo spazio occupato
+da `cache/` resta costante nel tempo.
 
-- `cache/latest.txt` — l'ultimo ASCII art generato
-- `cache/latest_meta.json` — timestamp e ultimo eventuale errore
+Se invece vuoi conservare uno storico degli scatti (es. per rivedere cosa
+è successo in un certo momento, o per un timelapse), imposta in `.env`
+(oppure dalla Web UI, sezione "Storico screenshot"):
 
-Nessun file JPEG viene salvato su disco: lo snapshot scaricato dalla camera
-resta solo in memoria per il tempo della conversione. Quindi lo spazio
-occupato da `cache/` **resta costante nel tempo** e non c'è nulla da
-eliminare periodicamente in condizioni normali.
-
-Se in fase di test hai salvato a mano qualche screenshot (come è successo
-durante lo sviluppo, con file tipo `cache/_test_snapshot.jpg`), rimuovili
-semplicemente con:
-
-```bash
-rm -f cache/*.jpg
+```
+SAVE_HISTORY=true
+HISTORY_RETENTION_HOURS=168   # cancella i file piu' vecchi di N ore (0 = nessun limite di eta')
+HISTORY_MAX_FILES=500         # tetto di sicurezza sul numero di file (0 = nessun limite)
 ```
 
-Se in futuro vorrai tenere uno **storico** delle immagini (es. per
-timelapse o debug), oggi il progetto non lo prevede: andrebbe aggiunta una
-piccola funzione che salva ogni JPEG con un nome a timestamp in una
-cartella dedicata (es. `cache/history/`). In quel caso, per evitare che
-cresca all'infinito, uno di questi due approcci funziona su qualunque
-cartella di questo tipo:
+Con `SAVE_HISTORY=true`, ogni cattura viene salvata anche come JPEG in
+`cache/history/AAAAMMGGTHHMMSSZ.jpg`. **La pulizia è automatica e integrata
+nello scheduler stesso** (funzione `_prune_history` in `src/scheduler.py`,
+eseguita ad ogni ciclo dopo il salvataggio): non serve un cron o un timer
+esterno. Vengono rimossi prima i file più vecchi della soglia oraria, poi
+— se ne restano comunque più del tetto massimo — i più vecchi tra quelli
+rimasti, finché il numero non rientra nel limite.
 
-- **Pulizia via cron** (rimuove i file più vecchi di 7 giorni, ogni notte
-  alle 3):
+Per svuotare manualmente lo storico in qualsiasi momento:
 
-  ```bash
-  crontab -e
-  # aggiungi questa riga:
-  0 3 * * * find /percorso/a/plugin_camera_nomadnet/cache/history -type f -mtime +7 -delete
-  ```
+```bash
+rm -f cache/history/*.jpg
+```
 
-- **Pulizia via systemd timer**, se preferisci restare coerente con il
-  servizio dello scheduler: un piccolo `.service` con `ExecStart=find
-  .../cache/history -type f -mtime +7 -delete` abbinato a un `.timer` con
-  `OnCalendar=daily`.
-
-Se vuoi che implementi davvero questa funzione di storico + pulizia
-automatica nel codice (invece della sola cache "ultimo scatto"), dimmelo:
-è un cambiamento mirato a `src/scheduler.py`, non serve toccare il resto.
+(oppure `rm -f cache/*.jpg` se hai salvato a mano qualche screenshot di
+test fuori da `cache/history/`, come è successo durante lo sviluppo con
+file tipo `cache/_test_snapshot.jpg`).
 
 ## 9. Aggiornare il progetto sul nodo
 

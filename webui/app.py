@@ -56,6 +56,9 @@ def _camera_config_from_form(form) -> CameraConfig:
         capture_method=form.get("capture_method", "onvif"),
         snapshot_interval_seconds=int(form.get("snapshot_interval_seconds") or 60),
         cache_dir=form.get("cache_dir", "cache"),
+        save_history=form.get("save_history") in ("on", "true", "1"),
+        history_retention_hours=int(form.get("history_retention_hours") or 168),
+        history_max_files=int(form.get("history_max_files") or 500),
     )
 
 

@@ -1,11 +1,12 @@
 # Segreti e configurazione locale
 .env
 
-# Cache generata a runtime (screenshot/ascii/metadati)
+# Cache generata a runtime (screenshot/ascii/metadati, incluso lo storico
+# in cache/history/: "**" serve a coprire anche quella sottocartella)
 cache/*.txt
 cache/*.json
-cache/*.jpg
 cache/*.tmp
+cache/**/*.jpg
 !cache/.gitkeep
 
 # Python

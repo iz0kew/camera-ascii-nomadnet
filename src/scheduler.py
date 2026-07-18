@@ -16,7 +16,7 @@ import time
 from datetime import datetime, timezone
 
 from .ascii_converter import image_to_ascii
-from .config import Settings, cache_paths, load_settings
+from .config import CameraConfig, Settings, cache_paths, history_dir_path, load_settings
 from .onvif_camera import CameraError, get_snapshot_jpeg
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -29,15 +29,59 @@ def _write_atomic(path, content: str) -> None:
     os.replace(tmp_path, path)
 
 
+def _save_history_snapshot(camera: CameraConfig, jpeg_bytes: bytes, timestamp: datetime) -> None:
+    """Salva una copia dello snapshot in cache/history/, con nome a timestamp
+    (formato senza ':' per restare valido anche su filesystem Windows)."""
+    filename = timestamp.strftime("%Y%m%dT%H%M%SZ") + ".jpg"
+    (history_dir_path(camera) / filename).write_bytes(jpeg_bytes)
+
+
+def _prune_history(camera: CameraConfig) -> None:
+    """Rimuove dallo storico i file oltre la scadenza configurata e, come
+    ulteriore tetto di sicurezza, quelli in eccesso rispetto al numero
+    massimo consentito (i piu' vecchi per primi). Un valore <= 0 disattiva
+    il relativo criterio."""
+    if camera.history_retention_hours <= 0 and camera.history_max_files <= 0:
+        return
+
+    files = sorted(history_dir_path(camera).glob("*.jpg"), key=lambda p: p.stat().st_mtime)
+    removed = 0
+
+    if camera.history_retention_hours > 0:
+        cutoff = time.time() - camera.history_retention_hours * 3600
+        kept = []
+        for f in files:
+            if f.stat().st_mtime < cutoff:
+                f.unlink(missing_ok=True)
+                removed += 1
+            else:
+                kept.append(f)
+        files = kept
+
+    if camera.history_max_files > 0 and len(files) > camera.history_max_files:
+        excess = len(files) - camera.history_max_files
+        for f in files[:excess]:
+            f.unlink(missing_ok=True)
+            removed += 1
+
+    if removed:
+        logger.info("Storico: rimossi %d screenshot vecchi", removed)
+
+
 def capture_once(settings: Settings) -> None:
     latest_txt, latest_meta = cache_paths(settings.camera)
-    now = datetime.now(timezone.utc).isoformat()
+    now_dt = datetime.now(timezone.utc)
+    now = now_dt.isoformat()
     try:
         jpeg_bytes = get_snapshot_jpeg(settings.camera)
         ascii_art = image_to_ascii(jpeg_bytes, settings.ascii)
         _write_atomic(latest_txt, ascii_art)
         _write_atomic(latest_meta, json.dumps({"updated_at": now, "error": None}, indent=2))
         logger.info("Snapshot aggiornato (%d caratteri)", len(ascii_art))
+
+        if settings.camera.save_history:
+            _save_history_snapshot(settings.camera, jpeg_bytes, now_dt)
+            _prune_history(settings.camera)
     except CameraError as exc:
         logger.error("Cattura fallita: %s", exc)
         _write_atomic(latest_meta, json.dumps({"updated_at": now, "error": str(exc)}, indent=2))
