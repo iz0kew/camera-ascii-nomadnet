@@ -1,5 +1,8 @@
-"""Loop di scheduling: cattura periodicamente uno snapshot dalla camera,
-lo converte in ASCII art e aggiorna la cache letta dalla pagina NomadNet.
+"""Loop di scheduling: cattura periodicamente uno snapshot dalla camera
+e lo salva nella cache letta dalla pagina NomadNet. La conversione in ASCII
+art (mono/colore) avviene invece al volo in pages/index.mu ad ogni
+richiesta, cosi' la modalita' colore e' una scelta per-richiesta e non
+resta "congelata" a quella impostata al momento della cattura.
 
 Va eseguito come processo indipendente e di lunga durata, separato dalla
 pagina NomadNet (che deve rispondere subito e non puo' fare I/O di rete
@@ -15,7 +18,6 @@ import os
 import time
 from datetime import datetime, timezone
 
-from .ascii_converter import image_to_ascii
 from .config import CameraConfig, Settings, cache_paths, history_dir_path, load_settings
 from .onvif_camera import CameraError, get_snapshot_jpeg
 
@@ -26,6 +28,12 @@ logger = logging.getLogger("scheduler")
 def _write_atomic(path, content: str) -> None:
     tmp_path = path.with_suffix(path.suffix + ".tmp")
     tmp_path.write_text(content, encoding="utf-8")
+    os.replace(tmp_path, path)
+
+
+def _write_atomic_bytes(path, content: bytes) -> None:
+    tmp_path = path.with_suffix(path.suffix + ".tmp")
+    tmp_path.write_bytes(content)
     os.replace(tmp_path, path)
 
 
@@ -69,15 +77,14 @@ def _prune_history(camera: CameraConfig) -> None:
 
 
 def capture_once(settings: Settings) -> None:
-    latest_txt, latest_meta = cache_paths(settings.camera)
+    latest_jpg, latest_meta = cache_paths(settings.camera)
     now_dt = datetime.now(timezone.utc)
     now = now_dt.isoformat()
     try:
         jpeg_bytes = get_snapshot_jpeg(settings.camera)
-        ascii_art = image_to_ascii(jpeg_bytes, settings.ascii)
-        _write_atomic(latest_txt, ascii_art)
+        _write_atomic_bytes(latest_jpg, jpeg_bytes)
         _write_atomic(latest_meta, json.dumps({"updated_at": now, "error": None}, indent=2))
-        logger.info("Snapshot aggiornato (%d caratteri)", len(ascii_art))
+        logger.info("Snapshot aggiornato (%d byte)", len(jpeg_bytes))
 
         if settings.camera.save_history:
             _save_history_snapshot(settings.camera, jpeg_bytes, now_dt)

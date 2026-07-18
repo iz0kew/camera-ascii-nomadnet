@@ -23,8 +23,7 @@ class CameraError(Exception):
 def _onvif_media_service(camera: CameraConfig):
     from onvif import ONVIFCamera
 
-    wsdl_dir = camera.wsdl_dir or None
-    cam = ONVIFCamera(camera.ip, camera.port, camera.user, camera.password, wsdl_dir)
+    cam = ONVIFCamera(camera.ip, camera.port, camera.user, camera.password, camera.resolved_wsdl_dir())
     return cam, cam.create_media_service()
 
 

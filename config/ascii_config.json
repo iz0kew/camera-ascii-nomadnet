@@ -9,6 +9,6 @@
   "invert": false,
   "edge_detect": true,
   "edge_mix": 0.5,
-  "color_mode": "color",
+  "color_mode": "mono",
   "color_palette": "8"
 }

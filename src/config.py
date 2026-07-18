@@ -40,6 +40,14 @@ class CameraConfig:
     history_retention_hours: int = 168  # 7 giorni
     history_max_files: int = 500  # tetto di sicurezza indipendente dall'eta'
 
+    def resolved_wsdl_dir(self) -> str:
+        """Percorso WSDL da usare davvero: quello custom se impostato,
+        altrimenti la copia vendorizzata funzionante. Unico punto dove si
+        applica questo fallback, cosi' vale sia per le CameraConfig lette da
+        .env (load_settings) sia per quelle costruite al volo da un form
+        (es. il pulsante "Cattura ora" della Web UI, che non passa da .env)."""
+        return self.wsdl_dir or str(VENDORED_WSDL_DIR)
+
 
 @dataclass
 class AsciiConfig:
@@ -76,7 +84,7 @@ def load_settings() -> Settings:
         port=int(os.getenv("CAMERA_PORT", "80") or 80),
         user=os.getenv("CAMERA_USER", ""),
         password=os.getenv("CAMERA_PASSWORD", ""),
-        wsdl_dir=os.getenv("CAMERA_WSDL_DIR") or str(VENDORED_WSDL_DIR),
+        wsdl_dir=os.getenv("CAMERA_WSDL_DIR", ""),
         capture_method=os.getenv("CAPTURE_METHOD", "onvif"),
         snapshot_interval_seconds=int(os.getenv("SNAPSHOT_INTERVAL_SECONDS", "60") or 60),
         cache_dir=os.getenv("CACHE_DIR", "cache"),
@@ -126,7 +134,7 @@ def _resolved_cache_dir(camera: CameraConfig) -> Path:
 def cache_paths(camera: CameraConfig) -> Tuple[Path, Path]:
     cache_dir = _resolved_cache_dir(camera)
     cache_dir.mkdir(parents=True, exist_ok=True)
-    return cache_dir / "latest.txt", cache_dir / "latest_meta.json"
+    return cache_dir / "latest.jpg", cache_dir / "latest_meta.json"
 
 
 def history_dir_path(camera: CameraConfig) -> Path:

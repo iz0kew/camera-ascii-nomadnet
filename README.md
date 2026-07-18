@@ -14,12 +14,13 @@ Il progetto è diviso in tre parti indipendenti:
 
 1. **`src/scheduler.py`** — processo di lunga durata: ogni `SNAPSHOT_INTERVAL_SECONDS`
    si collega alla camera via ONVIF (fallback RTSP se necessario), scarica uno
-   snapshot, lo converte in ASCII art e scrive il risultato in `cache/latest.txt`
-   (+ `cache/latest_meta.json` con timestamp/errori).
+   snapshot e lo scrive in `cache/latest.jpg` (+ `cache/latest_meta.json` con
+   timestamp/errori).
 2. **`pages/index.mu`** — script Python eseguibile, installato nella cartella
-   `pages` di un nodo NomadNet. Ad ogni richiesta legge solo la cache già pronta
-   e la mostra come pagina Micron: resta veloce e non si collega mai
-   direttamente alla camera durante la richiesta.
+   `pages` di un nodo NomadNet. Ad ogni richiesta legge solo il JPEG già in
+   cache (non si collega mai direttamente alla camera, resta veloce) e lo
+   converte al volo in ASCII art nella modalità colore scelta dall'utente
+   tramite i link "Mono"/"A colori" in fondo alla pagina stessa.
 3. **`webui/app.py`** — piccola interfaccia web locale (Flask), in stile
    [asciiart.eu](https://www.asciiart.eu/image-to-ascii), per impostare i
    parametri di camera e conversione con anteprima live.
@@ -76,7 +77,13 @@ Reticulum è pensato anche per interfacce a bassissima banda (LoRa). Con
 in tag Micron `` `Fxxx...`f ``, che appesantiscono parecchio la pagina.
 **Scegli in base all'interfaccia che il tuo nodo NomadNet userà per servire
 questa pagina**: `mono` su LoRa/reti lente, `color` va bene su interfacce
-TCP/veloci. Il parametro è cambiabile in ogni momento dalla Web UI.
+TCP/veloci.
+
+Il valore in `config/ascii_config.json` (cambiabile in ogni momento dalla Web
+UI) è solo il **default**: la pagina Micron reale (`pages/index.mu`) mostra
+anche due link "Mono" / "A colori" in fondo, che permettono di scegliere la
+modalità ad ogni richiesta, direttamente dal client NomadNet, senza dover
+passare dalla Web UI.
 
 ## Avvio
 

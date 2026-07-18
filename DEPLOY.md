@@ -37,7 +37,7 @@ cosa serve davvero a runtime e cosa puoi escludere:
 | `.env.example` | Sì (come modello) | Da copiare in `.env` e compilare **sul nodo stesso** |
 | `.env` | **No, non copiarlo da qui** | Va creato/compilato direttamente sul nodo con le credenziali; se lo generi qui e lo trasferisci, trasferisci anche la password in chiaro su un altro canale — meglio ricompilarlo sul posto |
 | `webui/` | Opzionale | Serve solo se vuoi poter riconfigurare i parametri da quella stessa macchina via browser. Se configuri tutto da qui e sposti solo `.env`/`ascii_config.json` sul nodo, puoi ometterla |
-| `cache/` | Sì, ma vuota | Basta la cartella (con `.gitkeep`); i contenuti (`latest.txt`, `latest_meta.json`) li rigenera da solo lo scheduler al primo avvio |
+| `cache/` | Sì, ma vuota | Basta la cartella (con `.gitkeep`); i contenuti (`latest.jpg`, `latest_meta.json`) li rigenera da solo lo scheduler al primo avvio |
 | `.git/` | **No** | Storia del repository, non serve a runtime (a meno che tu voglia poi fare `git pull` direttamente sul nodo, nel qual caso tienila) |
 | `.claude/` | **No** | Configurazione locale dell'ambiente di sviluppo, irrilevante sul nodo |
 | `contesto.txt` | No | Appunti iniziali del progetto, non usati dal codice |
@@ -165,7 +165,7 @@ macchina.
 
 Per impostazione predefinita (`SAVE_HISTORY=false`) lo scheduler **non
 accumula nulla**: ad ogni ciclo sovrascrive sempre gli stessi due file
-(`cache/latest.txt` e `cache/latest_meta.json`), quindi lo spazio occupato
+(`cache/latest.jpg` e `cache/latest_meta.json`), quindi lo spazio occupato
 da `cache/` resta costante nel tempo.
 
 Se invece vuoi conservare uno storico degli scatti (es. per rivedere cosa
@@ -218,7 +218,7 @@ sudo systemctl restart camera-ascii-scheduler.service
   punti a una copia valida.
 - **La pagina non appare/non si aggiorna nel client NomadNet**: controlla
   che `pages/index.mu` sia eseguibile (`ls -l`, deve avere `x`) e che lo
-  scheduler stia scrivendo `cache/latest.txt` (`journalctl -u
+  scheduler stia scrivendo `cache/latest.jpg` (`journalctl -u
   camera-ascii-scheduler -f`).
 - **Sintassi Micron resa in modo inatteso**: vedi la nota nel README — la
   sintassi usata è stata verificata su più fonti pubbliche ma può variare
