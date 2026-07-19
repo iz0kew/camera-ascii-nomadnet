@@ -144,10 +144,20 @@ def _color_runs_per_row(
     return rows
 
 
+def _escape_micron_text(text: str) -> str:
+    """Neutralizza backtick e backslash letterali nel testo di un run, cosi'
+    non vengono scambiati dal parser Micron per inizio tag/escape (rilevante
+    per il ramp preset "detailed", che contiene entrambi i caratteri)."""
+    return text.replace("\\", "\\\\").replace("`", "\\`")
+
+
 def _render_color_micron(rows: List[List[Tuple[str, str]]]) -> str:
     """Renderizza i run colore come tag Micron `FxxxTesto`f, per la pagina
     NomadNet reale."""
-    lines = ["".join(f"`F{color}{text}`f" for color, text in row) for row in rows]
+    lines = [
+        "".join(f"`F{color}{_escape_micron_text(text)}`f" for color, text in row)
+        for row in rows
+    ]
     return "\n".join(lines)
 
 

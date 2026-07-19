@@ -65,9 +65,16 @@ print()
 if latest_jpg.exists() and latest_jpg.stat().st_size > 0:
     ascii_cfg = replace(settings.ascii, color_mode=requested_mode)
     ascii_art = image_to_ascii(latest_jpg.read_bytes(), ascii_cfg, target="micron")
-    print("`=")
-    print(ascii_art)
-    print("`=")
+    if requested_mode == "color":
+        # I tag colore Micron (`Fxxx...`f) devono restare fuori dal blocco
+        # letterale qui sotto, altrimenti il client li mostra come testo
+        # grezzo invece di interpretarli (il blocco letterale disattiva
+        # ogni parsing di markup, non solo il reflow del testo).
+        print(ascii_art)
+    else:
+        print("`=")
+        print(ascii_art)
+        print("`=")
 else:
     print("Nessuno snapshot disponibile ancora.")
     print("Verifica che lo scheduler (python -m src.scheduler) sia in esecuzione.")
