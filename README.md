@@ -131,9 +131,7 @@ bisogno di una camera ONVIF collegata.
 
 ## Repository GitHub
 
-Il progetto è pubblicato (repository **privato**, dato che contiene
-riferimenti a una telecamera reale anche se le credenziali restano solo in
-`.env`, mai versionato) su:
+Il progetto è pubblicato su:
 
 https://github.com/iz0kew/camera-ascii-nomadnet
 
