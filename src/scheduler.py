@@ -90,11 +90,21 @@ def capture_once(settings: Settings) -> None:
             _save_history_snapshot(settings.camera, jpeg_bytes, now_dt)
             _prune_history(settings.camera)
     except CameraError as exc:
+        # Il dettaglio completo (con IP, porta, URI e in certi casi persino
+        # le credenziali RTSP) va solo nel log locale: il messaggio scritto
+        # in cache/latest_meta.json e' letto anche dalla pagina NomadNet
+        # pubblica (pages/index.mu), quindi deve restare generico.
         logger.error("Cattura fallita: %s", exc)
-        _write_atomic(latest_meta, json.dumps({"updated_at": now, "error": str(exc)}, indent=2))
-    except Exception as exc:  # difesa da errori imprevisti: il loop non deve mai morire
+        _write_atomic(
+            latest_meta,
+            json.dumps({"updated_at": now, "error": "Errore nella comunicazione con la telecamera"}, indent=2),
+        )
+    except Exception:  # difesa da errori imprevisti: il loop non deve mai morire
         logger.exception("Errore imprevisto durante la cattura")
-        _write_atomic(latest_meta, json.dumps({"updated_at": now, "error": str(exc)}, indent=2))
+        _write_atomic(
+            latest_meta,
+            json.dumps({"updated_at": now, "error": "Errore imprevisto durante la cattura"}, indent=2),
+        )
 
 
 def run_forever() -> None:
