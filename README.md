@@ -1,5 +1,8 @@
 # Camera ONVIF → ASCII Art per NomadNet
 
+![Repo pubblico](https://img.shields.io/badge/repo-public-brightgreen)
+![License: MIT](https://img.shields.io/badge/license-MIT-blue)
+
 Pagina dinamica per un nodo [NomadNet](https://github.com/markqvist/NomadNet) (rete
 [Reticulum](https://reticulum.network/)) che mostra l'ultimo screenshot di una
 telecamera di rete ONVIF, convertito in ASCII art e renderizzato in Micron.
