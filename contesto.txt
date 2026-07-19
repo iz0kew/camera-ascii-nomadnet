@@ -1,5 +1,0 @@
--voglio realizzare uno script python che gira come pagina nomadnet di reticulum
--lo script deve collegarsi ad una telecamera di rete fare uno screeshot schedulato e trasformarlo in un immagine ascii da mostrare in una pagina micron.
--le camera utilizza il protocollo onvif ed creerai un file env dove andrò ad inserire successivamente ip e nome utente e password e ogni quanto tempo andare a prelevare l'immagine
--per la trasformazione dell'immagine in formato text utilizza le stesse future che ha questo sito o trovane di migliori: https://www.asciiart.eu/image-to-ascii
--vorrei una piccola pagina html da utilizzare proprio come fa il sito per gestire i vari parametri
