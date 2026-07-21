@@ -36,7 +36,7 @@
 </style>
 </head>
 <body>
-<h1>Camera ONVIF &rarr; ASCII Art per NomadNet</h1>
+<h1>Camera (ONVIF / Dahua / Reolink / RTSP) &rarr; ASCII Art per NomadNet</h1>
 <p class="subtitle">Imposta i parametri di camera e conversione, con anteprima live come su asciiart.eu. Il salvataggio scrive su <code>.env</code> e <code>config/ascii_config.json</code>.</p>
 
 {% if saved %}<div class="status ok">Parametri salvati.</div>{% endif %}
@@ -45,20 +45,28 @@
 <div class="layout">
   <div>
     <fieldset>
-      <legend>Telecamera ONVIF</legend>
+      <legend>Telecamera</legend>
+      <label for="protocol">Protocollo</label>
+      <select id="protocol" name="protocol">
+        <option value="onvif" {% if camera.protocol == "onvif" %}selected{% endif %}>ONVIF (generico, consigliato se supportato)</option>
+        <option value="dahua" {% if camera.protocol == "dahua" %}selected{% endif %}>Dahua (CGI HTTP + RTSP, anche OEM: Amcrest, ecc.)</option>
+        <option value="reolink" {% if camera.protocol == "reolink" %}selected{% endif %}>Reolink (API HTTP + RTSP)</option>
+        <option value="rtsp" {% if camera.protocol == "rtsp" %}selected{% endif %}>RTSP diretto (URL manuale, nessuna scoperta)</option>
+      </select>
+
       <label for="ip">Indirizzo IP</label>
       <input type="text" id="ip" name="ip" value="{{ camera.ip }}" placeholder="192.168.1.100">
 
       <div class="row">
         <div>
-          <label for="port">Porta</label>
+          <label for="port">Porta HTTP</label>
           <input type="number" id="port" name="port" value="{{ camera.port }}">
         </div>
-        <div>
+        <div class="proto-field proto-onvif proto-dahua proto-reolink">
           <label for="capture_method">Metodo cattura</label>
           <select id="capture_method" name="capture_method">
-            <option value="onvif" {% if camera.capture_method == "onvif" %}selected{% endif %}>ONVIF snapshot (consigliato)</option>
-            <option value="rtsp" {% if camera.capture_method == "rtsp" %}selected{% endif %}>RTSP (fallback via OpenCV)</option>
+            <option value="snapshot" {% if camera.capture_method == "snapshot" or camera.capture_method == "onvif" %}selected{% endif %}>Snapshot HTTP (consigliato)</option>
+            <option value="rtsp" {% if camera.capture_method == "rtsp" %}selected{% endif %}>RTSP (frame via OpenCV)</option>
           </select>
         </div>
       </div>
@@ -69,8 +77,30 @@
       <label for="password">Password</label>
       <input type="password" id="password" name="password" value="{{ camera.password }}">
 
-      <label for="wsdl_dir">Cartella WSDL custom (opzionale)</label>
-      <input type="text" id="wsdl_dir" name="wsdl_dir" value="{{ camera.wsdl_dir }}">
+      <div class="proto-field proto-onvif">
+        <label for="wsdl_dir">Cartella WSDL custom (opzionale)</label>
+        <input type="text" id="wsdl_dir" name="wsdl_dir" value="{{ camera.wsdl_dir }}">
+      </div>
+
+      <div class="row proto-field proto-dahua proto-reolink">
+        <div>
+          <label for="channel">Canale (NVR multi-camera: 1, 2, 3...)</label>
+          <input type="number" id="channel" name="channel" value="{{ camera.channel }}" min="1">
+        </div>
+        <div>
+          <label for="stream_subtype">Stream RTSP</label>
+          <select id="stream_subtype" name="stream_subtype">
+            <option value="main" {% if camera.stream_subtype == "main" %}selected{% endif %}>Main (alta risoluzione)</option>
+            <option value="sub" {% if camera.stream_subtype == "sub" %}selected{% endif %}>Sub (bassa risoluzione, piu' leggero)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="proto-field proto-rtsp">
+        <label for="rtsp_url">URL RTSP</label>
+        <input type="text" id="rtsp_url" name="rtsp_url" value="{{ camera.rtsp_url }}" placeholder="rtsp://192.168.1.100:554/stream1">
+        <p class="hint">Utente/password (sopra) vengono iniettati automaticamente nell'URL se non gia' presenti.</p>
+      </div>
 
       <label for="snapshot_interval_seconds">Intervallo cattura (secondi)</label>
       <input type="number" id="snapshot_interval_seconds" name="snapshot_interval_seconds" value="{{ camera.snapshot_interval_seconds }}" min="5">
@@ -191,6 +221,17 @@
 const form = document.getElementById('config-form');
 const statusEl = document.getElementById('status');
 const previewEl = document.getElementById('preview');
+const protocolSelect = document.getElementById('protocol');
+
+function syncProtocolFields() {
+  const protocol = protocolSelect.value;
+  document.querySelectorAll('.proto-field').forEach((el) => {
+    el.style.display = el.classList.contains('proto-' + protocol) ? '' : 'none';
+  });
+}
+
+protocolSelect.addEventListener('change', syncProtocolFields);
+syncProtocolFields();
 
 function showStatus(message, isError) {
   statusEl.innerHTML = `<div class="status ${isError ? 'err' : 'ok'}">${message}</div>`;
