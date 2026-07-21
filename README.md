@@ -1,11 +1,14 @@
-# Camera ONVIF → ASCII Art per NomadNet
+# Camera ONVIF/Dahua/Reolink/RTSP → ASCII Art per NomadNet
 
 ![Repo pubblico](https://img.shields.io/badge/repo-public-brightgreen)
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue)
 
 Pagina dinamica per un nodo [NomadNet](https://github.com/markqvist/NomadNet) (rete
 [Reticulum](https://reticulum.network/)) che mostra l'ultimo screenshot di una
-telecamera di rete ONVIF, convertito in ASCII art e renderizzato in Micron.
+telecamera di rete, convertito in ASCII art e renderizzato in Micron.
+Supporta telecamere **ONVIF** generiche, **Dahua** (e OEM compatibili come
+Amcrest), **Reolink**, oppure qualunque telecamera **RTSP** generica tramite
+URL configurato a mano.
 
 > Per installare e far girare questo progetto su un nodo Reticulum/NomadNet
 > reale (file da copiare/escludere, pacchetti di sistema, servizi systemd,
@@ -16,9 +19,10 @@ telecamera di rete ONVIF, convertito in ASCII art e renderizzato in Micron.
 Il progetto è diviso in tre parti indipendenti:
 
 1. **`src/scheduler.py`** — processo di lunga durata: ogni `SNAPSHOT_INTERVAL_SECONDS`
-   si collega alla camera via ONVIF (fallback RTSP se necessario), scarica uno
-   snapshot e lo scrive in `cache/latest.jpg` (+ `cache/latest_meta.json` con
-   timestamp/errori).
+   si collega alla camera secondo il protocollo configurato (ONVIF, Dahua,
+   Reolink o RTSP diretto — vedi `src/camera.py`), con fallback RTSP se lo
+   snapshot HTTP fallisce, e scrive il JPEG in `cache/latest.jpg`
+   (+ `cache/latest_meta.json` con timestamp/errori).
 2. **`pages/index.mu`** — script Python eseguibile, installato nella cartella
    `pages` di un nodo NomadNet. Ad ogni richiesta legge solo il JPEG già in
    cache (non si collega mai direttamente alla camera, resta veloce) e lo
@@ -32,7 +36,7 @@ Il progetto è diviso in tre parti indipendenti:
 plugin_camera_nomadnet/
 ├── .env.example        # copia in .env e compila con i tuoi dati
 ├── config/ascii_config.json
-├── src/                # config, onvif_camera, ascii_converter, scheduler
+├── src/                # config, camera (onvif/dahua/reolink/rtsp), ascii_converter, scheduler
 ├── pages/index.mu       # pagina Micron dinamica
 ├── webui/               # form di configurazione + anteprima live
 ├── cache/               # generata a runtime, non versionata
@@ -50,22 +54,33 @@ pip install -r requirements.txt
 cp .env.example .env               # poi modifica .env con i tuoi dati
 ```
 
-`opencv-python` (usato solo per il fallback RTSP) è una dipendenza pesante:
-se la tua camera funziona bene con il semplice snapshot ONVIF puoi rimuoverla
-da `requirements.txt` e da `src/onvif_camera.py` (funzione `_capture_rtsp_frame`).
+`opencv-python` (usato per la cattura via RTSP, sia come fallback che come
+protocollo diretto) è una dipendenza pesante: se la tua camera funziona bene
+con il solo snapshot HTTP/ONVIF puoi rimuoverla da `requirements.txt` e dalle
+funzioni `_capture_*_rtsp*` in `src/camera.py` (non serve se non usi mai RTSP).
 
 > **Nota**: la cartella `vendor/wsdl/` contiene una copia dei file WSDL ONVIF
-> necessari a `onvif-zeep`. È vendorizzata volutamente nel repository perché
-> il pacchetto pubblicato su PyPI non li installa correttamente di default
-> (percorso rotto): senza questa copia ogni chiamata ONVIF fallisce subito
-> con un `TypeError` prima ancora di contattare la camera.
+> necessari a `onvif-zeep` (serve solo con `CAMERA_PROTOCOL=onvif`). È
+> vendorizzata volutamente nel repository perché il pacchetto pubblicato su
+> PyPI non li installa correttamente di default (percorso rotto): senza
+> questa copia ogni chiamata ONVIF fallisce subito con un `TypeError` prima
+> ancora di contattare la camera.
 
 ## Configurazione
 
 Compila `.env` (vedi `.env.example`):
 
 - `CAMERA_IP`, `CAMERA_PORT`, `CAMERA_USER`, `CAMERA_PASSWORD` — dati della camera.
-- `CAPTURE_METHOD` — `onvif` (consigliato) oppure `rtsp`.
+- `CAMERA_PROTOCOL` — `onvif` (generico), `dahua` (CGI HTTP + RTSP, anche OEM
+  come Amcrest), `reolink` (API HTTP + RTSP) oppure `rtsp` (URL manuale,
+  nessuna scoperta — richiede `CAMERA_RTSP_URL`).
+- `CAPTURE_METHOD` — `snapshot` (consigliato, per onvif/dahua/reolink) oppure
+  `rtsp` (cattura un frame dallo stream via OpenCV); se lo snapshot fallisce
+  scatta comunque il fallback RTSP in automatico.
+- `CAMERA_CHANNEL` — canale su NVR multi-camera (Dahua/Reolink), 1-based.
+- `CAMERA_STREAM_SUBTYPE` — `main` o `sub`, risoluzione dello stream RTSP
+  (Dahua/Reolink).
+- `CAMERA_RTSP_URL` — URL RTSP completo, usato solo con `CAMERA_PROTOCOL=rtsp`.
 - `SNAPSHOT_INTERVAL_SECONDS` — ogni quanti secondi catturare un nuovo frame.
 - `CACHE_DIR` — dove scrivere l'ultima ascii art (default `cache/`).
 

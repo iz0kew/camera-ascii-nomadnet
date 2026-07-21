@@ -68,14 +68,15 @@ pip install -r requirements.txt
 
 Note pratiche:
 
-- `opencv-python` (usato solo per il fallback RTSP) è pesante e su
-  Raspberry Pi/ARM può non avere un wheel precompilato, richiedendo una
-  compilazione lunga. Se non ti serve RTSP (la tua camera risponde bene
-  allo snapshot ONVIF), puoi rimuoverlo da `requirements.txt` e non
-  installarlo affatto: `_capture_rtsp_frame` in `src/onvif_camera.py` verrà
-  chiamata solo se `CAPTURE_METHOD=rtsp` o se lo snapshot ONVIF fallisce.
-  In alternativa, su Debian/RPi puoi installare `sudo apt install
-  python3-opencv` invece della versione pip.
+- `opencv-python` (usato per la cattura via RTSP, sia come fallback che come
+  protocollo diretto) è pesante e su Raspberry Pi/ARM può non avere un wheel
+  precompilato, richiedendo una compilazione lunga. Se non ti serve RTSP (la
+  tua camera risponde bene allo snapshot HTTP/ONVIF e non usi mai
+  `CAMERA_PROTOCOL=rtsp`), puoi rimuoverlo da `requirements.txt` e non
+  installarlo affatto: le funzioni `_capture_*_rtsp*` in `src/camera.py`
+  vengono chiamate solo se `CAPTURE_METHOD=rtsp`, se lo snapshot HTTP
+  fallisce, o se `CAMERA_PROTOCOL=rtsp`. In alternativa, su Debian/RPi puoi
+  installare `sudo apt install python3-opencv` invece della versione pip.
 - Reticulum/NomadNet vanno installati separatamente (vedi punto 1), non
   sono nel `requirements.txt` di questo progetto.
 
