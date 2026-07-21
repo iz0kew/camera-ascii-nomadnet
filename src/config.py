@@ -32,8 +32,12 @@ class CameraConfig:
     port: int = 80
     user: str = ""
     password: str = ""
+    protocol: str = "onvif"  # onvif | dahua | reolink | rtsp
     wsdl_dir: str = ""
-    capture_method: str = "onvif"  # onvif | rtsp
+    capture_method: str = "snapshot"  # snapshot (HTTP/CGI, consigliato) | rtsp (frame da stream)
+    channel: int = 1  # canale/telecamera su NVR multi-canale (Dahua e Reolink)
+    stream_subtype: str = "main"  # main | sub - risoluzione stream RTSP (Dahua/Reolink)
+    rtsp_url: str = ""  # URL RTSP completo, usato solo con protocol="rtsp"
     snapshot_interval_seconds: int = 60
     cache_dir: str = "cache"
     save_history: bool = False
@@ -84,8 +88,12 @@ def load_settings() -> Settings:
         port=int(os.getenv("CAMERA_PORT", "80") or 80),
         user=os.getenv("CAMERA_USER", ""),
         password=os.getenv("CAMERA_PASSWORD", ""),
+        protocol=os.getenv("CAMERA_PROTOCOL", "onvif"),
         wsdl_dir=os.getenv("CAMERA_WSDL_DIR", ""),
-        capture_method=os.getenv("CAPTURE_METHOD", "onvif"),
+        capture_method=os.getenv("CAPTURE_METHOD", "snapshot"),
+        channel=int(os.getenv("CAMERA_CHANNEL", "1") or 1),
+        stream_subtype=os.getenv("CAMERA_STREAM_SUBTYPE", "main"),
+        rtsp_url=os.getenv("CAMERA_RTSP_URL", ""),
         snapshot_interval_seconds=int(os.getenv("SNAPSHOT_INTERVAL_SECONDS", "60") or 60),
         cache_dir=os.getenv("CACHE_DIR", "cache"),
         save_history=os.getenv("SAVE_HISTORY", "false").strip().lower() in ("1", "true", "yes", "on"),
@@ -110,8 +118,12 @@ def save_camera_config(camera: CameraConfig) -> None:
     set_key(str(ENV_PATH), "CAMERA_PORT", str(camera.port))
     set_key(str(ENV_PATH), "CAMERA_USER", camera.user)
     set_key(str(ENV_PATH), "CAMERA_PASSWORD", camera.password)
+    set_key(str(ENV_PATH), "CAMERA_PROTOCOL", camera.protocol)
     set_key(str(ENV_PATH), "CAMERA_WSDL_DIR", camera.wsdl_dir)
     set_key(str(ENV_PATH), "CAPTURE_METHOD", camera.capture_method)
+    set_key(str(ENV_PATH), "CAMERA_CHANNEL", str(camera.channel))
+    set_key(str(ENV_PATH), "CAMERA_STREAM_SUBTYPE", camera.stream_subtype)
+    set_key(str(ENV_PATH), "CAMERA_RTSP_URL", camera.rtsp_url)
     set_key(str(ENV_PATH), "SNAPSHOT_INTERVAL_SECONDS", str(camera.snapshot_interval_seconds))
     set_key(str(ENV_PATH), "CACHE_DIR", camera.cache_dir)
     set_key(str(ENV_PATH), "SAVE_HISTORY", "true" if camera.save_history else "false")

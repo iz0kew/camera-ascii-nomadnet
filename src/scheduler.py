@@ -19,7 +19,7 @@ import time
 from datetime import datetime, timezone
 
 from .config import CameraConfig, Settings, cache_paths, history_dir_path, load_settings
-from .onvif_camera import CameraError, get_snapshot_jpeg
+from .camera import CameraError, get_snapshot_jpeg
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger("scheduler")
