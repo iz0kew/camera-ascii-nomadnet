@@ -24,7 +24,7 @@ from src.config import (  # noqa: E402
     save_ascii_config,
     save_camera_config,
 )
-from src.onvif_camera import CameraError, get_snapshot_jpeg  # noqa: E402
+from src.camera import CameraError, get_snapshot_jpeg  # noqa: E402
 
 app = Flask(__name__)
 
@@ -52,8 +52,12 @@ def _camera_config_from_form(form) -> CameraConfig:
         port=int(form.get("port") or 80),
         user=form.get("user", ""),
         password=form.get("password", ""),
+        protocol=form.get("protocol", "onvif"),
         wsdl_dir=form.get("wsdl_dir", ""),
-        capture_method=form.get("capture_method", "onvif"),
+        capture_method=form.get("capture_method", "snapshot"),
+        channel=int(form.get("channel") or 1),
+        stream_subtype=form.get("stream_subtype", "main"),
+        rtsp_url=form.get("rtsp_url", ""),
         snapshot_interval_seconds=int(form.get("snapshot_interval_seconds") or 60),
         cache_dir=form.get("cache_dir", "cache"),
         save_history=form.get("save_history") in ("on", "true", "1"),
